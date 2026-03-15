@@ -85,7 +85,7 @@ class MSEven6Trigger:
                         channel_str = tree.find(".//ns0:Channel", namespaces=ns).text
                         event_id_str = tree.find(".//ns0:EventID", namespaces=ns).text
                         level_str = EVENT_LEVEL[int(tree.find(".//ns0:Level", namespaces=ns).text)]
-                        # Get Keyword and flip first bit
+                        # Get Keyword and flip first bit because Microsoft
                         keywords_int = int(tree.find(".//ns0:Keywords", namespaces=ns).text, 16) ^ 0b1000000000000000000000000000000000000000000000000000000000000000
                         keywords_str = KEYWORDS.get(keywords_int, f"Unknown ({hex(keywords_int)})")
                         # Get the task number for the task category
