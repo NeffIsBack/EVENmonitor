@@ -25,3 +25,8 @@ Files: EVENmonitor/even6_parser.py
 Copyright: 2020 Iwan Timmer
 License: GNU GPL 2.0
 Purpose: Parsing raw MSEven6 data into XML format
+
+Files: EVENmonitor/utils.py
+Copyright: 2022 Rémi GASCOU
+License: GNU GPL 3.0
+Purpose: Logger adapted from LDAPmonitor
