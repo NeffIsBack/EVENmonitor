@@ -23,7 +23,7 @@ pipx install git+https://github.com/NeffIsBack/EVENmonitor
 ## Usage
 
 ```bash
-EVENmonitor --dc-ip <TARGET_IP> -u <USER> -p <PASSWORD> -d <DOMAIN> 
+EVENmonitor --dc-ip <TARGET_IP> -u <USER> -p <PASSWORD> -d <DOMAIN>
 even --dc-ip <TARGET_IP> -u <USER> -p <PASSWORD> -d <DOMAIN>  # Short version
 ```
 
