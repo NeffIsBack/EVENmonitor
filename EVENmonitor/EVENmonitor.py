@@ -1,4 +1,5 @@
 import argparse
+import importlib.metadata
 import time
 from impacket.dcerpc.v5 import transport, even6
 from impacket.dcerpc.v5.rpcrt import RPC_C_AUTHN_GSS_NEGOTIATE, RPC_C_AUTHN_LEVEL_PKT_PRIVACY, DCERPCException
@@ -148,13 +149,15 @@ class MSEven6Result:
 
 
 def main():
-    # Mostly stolen from LDAPmonitor
+    VERSION = importlib.metadata.version("EVENmonitor")
+
     parser = argparse.ArgumentParser(description="EVENmonitor - Monitor and Analyze the Windows Event Log")
     parser.add_argument("--dc-ip", required=True, metavar="ip address", help="IP Address of the domain controller or KDC (Key Distribution Center) for Kerberos. If omitted it will use the domain part (FQDN) specified in the identity parameter")
     parser.add_argument("-u", "--username", required=True, metavar="USER", action="store", help="user to authenticate with")
     parser.add_argument("-d", "--domain", required=True, metavar="DOMAIN", action="store", help="(FQDN) domain to authenticate to")
     parser.add_argument("--kdcHost", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
     parser.add_argument("-k", "--kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line")
+    parser.add_argument("-v", "--version", action="version", version=f"Current Version: EVENmonitor {VERSION}")
 
     cred = parser.add_mutually_exclusive_group()
     cred.add_argument("-p", "--password", metavar="PASSWORD", action="store", help="password to authenticate with")
@@ -176,7 +179,7 @@ def main():
 
     logger = Logger(debug=args.debug, nocolors=args.no_colors, logfile=args.logfile)
     logger.success("======================================================")
-    logger.success("    EVEN6 live monitor v0.1        @NeffIsBack        ")
+    logger.success(f"    EVEN6 live monitor v{VERSION}        @NeffIsBack        ")
     logger.success("======================================================")
     logger.print()
 
