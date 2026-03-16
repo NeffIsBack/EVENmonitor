@@ -16,7 +16,7 @@ class MSEven6Trigger:
         self.args = args
         self.dce = None
 
-    def connect(self, username, password, domain, lmhash, nthash, aesKey, target, doKerberos, dcHost, pipe):
+    def connect(self, username, password, domain, lmhash, nthash, aesKey, target, doKerberos, kdcHost, pipe):
         rpctransport = transport.DCERPCTransportFactory(hept_map(target, even6.MSRPC_UUID_EVEN6, protocol="ncacn_ip_tcp"))
         if hasattr(rpctransport, "set_credentials"):
             rpctransport.set_credentials(
@@ -28,7 +28,7 @@ class MSEven6Trigger:
                 aesKey=aesKey,
             )
         if doKerberos:
-            rpctransport.set_kerberos(doKerberos, kdcHost=dcHost)
+            rpctransport.set_kerberos(doKerberos, kdcHost=kdcHost)
         rpctransport.setRemoteHost(target)
         self.dce = rpctransport.get_dce_rpc()
         if doKerberos:
@@ -93,18 +93,18 @@ class MSEven6Trigger:
                         task_str = TASKS.get(task_number, f"Unknown Task ({task_number})")
 
                         # Filter by event ID if specified
-                        if event_id and not self.args.verbose:
+                        if event_id and not self.args.header_only:
                             event_ids = [eid.strip() for eid in event_id.split(",")]
                             if event_id_str not in event_ids:
                                 continue
 
                         # Filter by grep if specified
-                        if grep and grep not in cleaned and not self.args.verbose:
+                        if grep and grep not in cleaned and not self.args.header_only:
                             continue
 
-                        # Print the event header information and continue if verbose
+                        # Print the event header information and continue if header_only
                         self.logger.print(f"[{colored(creation_time, 'blue')}] Channel: {colored(channel_str, 'green', attrs=['bold'])}, Event ID: {colored(event_id_str, 'green', attrs=['bold'])}, Level: {colored(level_str, 'green', attrs=['bold'])}, Keywords: {colored(keywords_str, 'green', attrs=['bold'])}, Task: {colored(task_str, 'green', attrs=['bold'])}")
-                        if self.args.verbose:
+                        if self.args.header_only:
                             continue
 
                         # Extract EventData
@@ -150,27 +150,27 @@ class MSEven6Result:
 def main():
     # Mostly stolen from LDAPmonitor
     parser = argparse.ArgumentParser(description="EVENmonitor - Monitor and Analyze the Windows Event Log")
-    parser.add_argument("--dc-ip", required=True, dest="dc_ip", metavar="ip address", help="IP Address of the domain controller or KDC (Key Distribution Center) for Kerberos. If omitted it will use the domain part (FQDN) specified in the identity parameter")
-    parser.add_argument("-u", "--user", required=True, dest="auth_username", metavar="USER", action="store", help="user to authenticate with")
-    parser.add_argument("-d", "--domain", required=True, dest="auth_domain", metavar="DOMAIN", action="store", help="(FQDN) domain to authenticate to")
-    parser.add_argument("--kdcHost", dest="kdcHost", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
-    parser.add_argument("-k", "--kerberos", dest="use_kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line")
+    parser.add_argument("--dc-ip", required=True, metavar="ip address", help="IP Address of the domain controller or KDC (Key Distribution Center) for Kerberos. If omitted it will use the domain part (FQDN) specified in the identity parameter")
+    parser.add_argument("-u", "--username", required=True, metavar="USER", action="store", help="user to authenticate with")
+    parser.add_argument("-d", "--domain", required=True, metavar="DOMAIN", action="store", help="(FQDN) domain to authenticate to")
+    parser.add_argument("--kdcHost", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
+    parser.add_argument("-k", "--kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line")
 
     cred = parser.add_mutually_exclusive_group()
-    cred.add_argument("-p", "--password", dest="auth_password", metavar="PASSWORD", action="store", help="password to authenticate with")
-    cred.add_argument("-H", "--hashes", dest="auth_hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash")
-    cred.add_argument("--aes-key", dest="aesKey", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits)")
+    cred.add_argument("-p", "--password", metavar="PASSWORD", action="store", help="password to authenticate with")
+    cred.add_argument("-H", "--hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash")
+    cred.add_argument("--aes-key", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits)")
 
     misc = parser.add_argument_group("Logging")
-    misc.add_argument("--verbose", dest="verbose", action="store_true", default=False, help="Verbose mode. Only shows event header information.")
-    misc.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode.")
-    misc.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
-    misc.add_argument("-l", "--logfile", dest="logfile", type=str, default=None, help="Log file to save output to.")
+    misc.add_argument("--header-only", action="store_true", default=False, help="header_only mode. Only shows event header information.")
+    misc.add_argument("--debug", action="store_true", default=False, help="Debug mode.")
+    misc.add_argument("--no-colors", action="store_true", default=False, help="No colors mode.")
+    misc.add_argument("-l", "--logfile", type=str, default=None, help="Log file to save output to.")
 
     filtering = parser.add_argument_group("Filtering")
-    filtering.add_argument("--channel", dest="channel", default="Security", metavar="CHANNEL", help="Event log channel to monitor (default: Security).")
-    filtering.add_argument("--event-id", dest="event_id", default=None, metavar="EVENT_ID", help="Filter by specific event ID. Multiple IDs can be specified as a comma-separated list (e.g., 4624, 4625).")
-    filtering.add_argument("--grep", dest="grep", default=None, metavar="GREP", help="Filter events by a specific string. Only events containing this string will be displayed.")
+    filtering.add_argument("--channel", default="Security", metavar="CHANNEL", help="Event log channel to monitor (default: Security).")
+    filtering.add_argument("--event-id", default=None, metavar="EVENT_ID", help="Filter by specific event ID. Multiple IDs can be specified as a comma-separated list (e.g., 4624, 4625).")
+    filtering.add_argument("--grep", default=None, metavar="GREP", help="Filter events by a specific string. Only events containing this string will be displayed.")
 
     args = parser.parse_args()
 
@@ -180,27 +180,27 @@ def main():
     logger.success("======================================================")
     logger.print()
 
-    auth_lm_hash = ""
-    auth_nt_hash = ""
-    if args.auth_hashes is not None:
-        if ":" in args.auth_hashes:
-            auth_lm_hash = args.auth_hashes.split(":")[0]
-            auth_nt_hash = args.auth_hashes.split(":")[1]
+    lm_hash = ""
+    nt_hash = ""
+    if args.hashes is not None:
+        if ":" in args.hashes:
+            lm_hash = args.hashes.split(":")[0]
+            nt_hash = args.hashes.split(":")[1]
         else:
-            auth_nt_hash = args.auth_hashes
+            nt_hash = args.hashes
 
     msevenclass = MSEven6Trigger(logger, args)
     try:
         msevenclass.connect(
-            username=args.auth_username,
-            password=args.auth_password,
-            domain=args.auth_domain,
-            lmhash=auth_lm_hash,
-            nthash=auth_nt_hash,
+            username=args.username,
+            password=args.password,
+            domain=args.domain,
+            lmhash=lm_hash,
+            nthash=nt_hash,
             target=args.dc_ip,
-            doKerberos=args.use_kerberos,
-            dcHost=args.kdcHost,
-            aesKey=args.aesKey,
+            doKerberos=args.kerberos,
+            kdcHost=args.kdcHost,
+            aesKey=args.aes_key,
             pipe="eventlog"
         )
     except DCERPCException as e:
