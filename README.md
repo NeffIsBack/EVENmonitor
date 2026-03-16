@@ -41,8 +41,12 @@ even --dc-ip <TARGET_IP> -u <USER> -p <PASSWORD> -d <DOMAIN>  # Short version
 - `--kdcHost <HOST>` FQDN of KDC for Kerberos auth
 - `-H [LMHASH:]NTHASH`
 - `--aes-key <HEX>`
+
+#### Output
 - `--header-only` print only event headers (timestamp, ID, level, keyword, task)
 - `--debug` include raw formatted XML output
+- `--no-color` disable colored output
+- `--logfile <FILE>` also write output to a file
 
 ## Example workflows
 
@@ -57,8 +61,6 @@ Watch process creation artifacts:
 ```bash
 EVENmonitor --dc-ip 10.0.0.10 -u alice -d corp.local -p 'Passw0rd!' --event-id 4688 --grep powershell
 ```
-
-Grep for specific strings in events:
 
 ## Demo
 
