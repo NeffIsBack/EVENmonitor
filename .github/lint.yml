@@ -1,0 +1,42 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: EVENmonitor linting
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: EVENmonitor linting for Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: |
+          pipx install poetry
+          poetry --version
+          poetry env info
+      - name: EVENmonitor set up python ${{ matrix.python-version }} on ${{ matrix.os }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: poetry
+          cache-dependency-path: poetry.lock
+      - name: Install libraries with dev group
+        run: |
+          poetry install --with dev
+      - name: Run ruff
+        run: |
+          poetry run ruff --version
+          poetry run ruff check . --preview
