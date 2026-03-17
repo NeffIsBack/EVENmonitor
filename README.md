@@ -3,7 +3,7 @@
 `EVENmonitor` is a lightweight tool for monitoring Windows Event Logs remotely over MS-EVEN6 RPC.
 It retrieves event data from a target and parses the returned XML into readable output.
 
-The tool is aimed at security researchers, pentesters, and red//blue/purple team operators who want to observe how activity is captured in Windows logs during assessments.
+The tool is aimed at security researchers, pentesters, and red/blue/purple team operators who want to observe how activity is captured in Windows logs during assessments.
 Inspired by `LDAPmonitor`, it enables fast, real-time event filtering.
 
 Features:
